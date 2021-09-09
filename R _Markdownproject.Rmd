@@ -1,0 +1,355 @@
+---
+title: "BellaBeat Case study"
+author: "Abdullah"
+date: "08/09/2021"
+output:html_document
+  ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Case study Objectives
+---As an aspiring junior Data Analyst, is to provide insights about the products data with insightful recommendations in their line of wellness products. For this case study I have decided to go with the smartwatch and have been tasked to use a Kaggle dataset for FitBit Fitness Tracker (under CC0: Public Domain license) as a benchmark since it is also a smartwatch and collects similar data to Bellabeat’s smartwatch.
+
+
+##Importing data in R
+
+```{r}
+dailyActivity_merged <- read.csv("C:/Users/abdullah/Desktop/Fitabase_Data/dailyActivity_merged.csv")
+sleepDay_merged <- read.csv("C:/Users/abdullah/Desktop/Fitabase_Data/sleepDay_merged.csv")
+dailyCalories_merged <- read.csv("C:/Users/abdullah/Desktop/Fitabase_Data/dailyCalories_merged.csv")
+weightLogInfo_merged <- read.csv("C:/Users/abdullah/Desktop/Fitabase_Data/weightLogInfo_merged.csv")
+   
+```
+
+###Make name more readable
+```{r}
+dailyactivity<-dailyActivity_merged 
+sleep<-sleepDay_merged
+dailycalories<-dailyCalories_merged  
+weightinfo<-weightLogInfo_merged 
+```
+
+##Installing R useful Packages
+```{r}
+install.packages("tidyverse")
+install.packages("lubridate")
+install.packages("dplyr")
+install.packages("ggplot2")
+
+
+```
+
+
+##Libraries for installed packages
+```{r}
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+```
+
+
+##Check the data
+```{r}
+head(dailyactivity)
+head(sleep)
+head(dailycalories)
+head(weightinfo)
+str(dailyactivity)
+```
+
+##Data findings
+```{r}
+distinct(dailyactivity,Id)
+distinct(sleep,Id)
+ distinct(dailycalories,Id)
+ distinct(weightinfo,Id)
+
+```
+
+
+##View the data in R scipt panel
+
+```{r}
+View(dailyactivity)
+View(sleep)
+View(dailycalories)
+View(weightinfo)
+```
+
+**People are not adding weight**
+
+
+##Clean Data if any in dailyactivity table
+
+```{r}
+#Check duplicate
+sum(duplicated(dailyactivity))
+```
+
+
+```{r}
+#checking any missing value
+  sum(is.na(dailyactivity))
+```
+
+
+```{r}
+# Convert date from char to date type
+dailyactivity$Date <-  as.Date(dailyactivity$Date,format='%m/%d/%Y')
+
+```
+
+
+```{r}
+#Add new column with total active minutes
+dailyactivity2 <- dailyactivity %>% 
+  mutate(TotalActiveMinutes = VeryActiveMinutes + FairlyActiveMinutes + LightlyActiveMinutes+SedentaryMinutes)
+```
+##Add new column Active level
+```{r}
+dailyactivity2<-dailyactivity2%>%
+  mutate(dailyactivity2,activelevel=case_when
+         (TotalSteps>=100&TotalSteps<5000~"sedentary",
+           TotalSteps>=5000&TotalSteps<7500~"low active",
+           TotalSteps>=7500&TotalSteps<10000~"somewhat active",
+           TotalSteps>=10000&TotalSteps<12500~"active",TotalSteps>=1250~"highactive"))
+```
+
+##drop N/A value if any
+```{r}
+dailyactivity2<-dailyactivity2%>%
+  filter(activelevel!="N/A")
+```
+
+##View clean Data
+```{r}
+View(dailyactivity2)
+```
+
+
+##checking Data in sleep table
+
+```{r}
+#Check duplicate
+sum(duplicated(sleep))
+```
+
+
+```{r}
+#check Missing values
+sum(is.na(sleep))
+```
+
+
+```{r}
+#changing name of column from sleepday to date
+sleep<-rename(sleep,Date=SleepDay)
+```
+
+
+
+```{r}
+#Separate date and time 
+ sleep<-sleep %>% 
+  separate(Date, into=c("Date","Time"), sep=" " )
+```
+
+
+ 
+```{r}
+#Change date from char type
+sleep$Date <- as.Date(sleep$Date, format = '%m/%d/%Y')
+```
+
+```{r}
+#confirm changes
+str(sleep)
+View(sleep)
+```
+
+
+#check data in weight table
+
+```{r}
+# check Duplicate
+sum(duplicated(weightinfo))
+```
+
+
+
+```{r}
+# check Missing values
+sum(is.na(weightinfo$WeightPounds))
+```
+
+
+
+```{r}
+#Separate date and time 
+ weightinfo<-weightinfo %>% 
+  separate(Date, into=c("Date","Time"), sep=" " )
+```
+
+
+```{r}
+#Format column to date type
+weightinfo$Date <- as.Date(weightinfo$Date,format='%m/%d/%Y')
+```
+
+
+```{r}
+#confirm changes
+str(weightinfo)
+View(weightinfo)
+```
+
+
+##Now tables are cleaned, merged the tables
+```{r}
+merged_final <- merge(merge(dailyactivity2, sleep, by = c('Id', 'Date')), weightinfo, by = c('Id', 'Date'))
+```
+
+```{r}
+#checking the data type and statistical summary.
+str(merged_final)
+summary(merged_final)
+```
+
+# Lets Summarize the Cleaned Data
+### dailyactivity
+```{r}
+dailyactivity2 %>%
+  select(TotalSteps,
+         TotalDistance,
+         Calories,
+         VeryActiveMinutes,
+         FairlyActiveMinutes,
+         LightlyActiveMinutes,SedentaryMinutes,TotalActiveMinutes) %>%
+  summary()
+```
+
+
+###sleep summary
+```{r}
+sleep %>%
+  select(TotalSleepRecords,
+         TotalMinutesAsleep,
+         TotalTimeInBed) %>%
+  summary()
+  
+```
+
+### weight
+```{r}
+weightinfo %>%
+  select(WeightKg,
+         BMI,
+         IsManualReport) %>%
+  summary()
+```
+## INITIAL MAJOR FINDINGS AND CONCLUSION
+Looking at the merged dataset by Comparing lightactivity max and VeryActive Max. values - 518.0 and 210.0 respectively and totalactivity  it can easily be concluded that neither professional sportspeople nor lead very active lifestyles. 
+
+Furthermore, looking at the TotalMinutesAsleep column in  dataset we can see that the mean amount of minutes asleep = 419.5 which is equal to roughly 7 hours of sleep.,which is less than what is recommended to healthy person.
+
+##Bellabeat company can remind users to sleep little longer those who dont
+
+
+
+
+# Data Visualization
+
+
+## Plot for calories burned Vs. Steps Taken
+```{r}
+dailyactivity2 %>%
+  ggplot(mapping=aes(x = TotalSteps, y = Calories)) +
+  geom_point() +
+ geom_smooth(formula=y~x)+
+  labs(title = 'Calories burned by total steps taken')
+      
+```
+**More the steps taken, more the calories burned**
+
+##Compare Users Activeness on a weekdays
+
+```{r}
+dailyactivity2$Weekenddays<-weekdays(dailyactivity2$Date)
+  
+```
+
+
+```{r}
+ggplot(data=dailyactivity2)+geom_bar(mapping=aes(x=Weekenddays,fill=activelevel))
+```
+**We can see people are active on weekdays that might be because of working population.
+
+
+##Now check each users daily activity
+
+```{r}
+ggplot(data=dailyactivity2)+geom_bar(mapping=aes(x=activelevel,fill=activelevel))+
+  labs(title="Users Active level",x='Active category',y='level')
+```
+##It is clear from above graph people sit most of the time
+
+```{r}
+ggplot(data=dailyactivity2)+geom_bar(mapping=aes(x=activelevel,fill=activelevel))+
+  facet_wrap(~Id)+
+  labs(title="Activelevel of each Users")
+```
+##From above it can be seen some people are highactive and some are sedentary. From this graph and above graph it can be recommend to Bellabeat marketing team is to focus on millenials who are upper middle class and looking just to stay fit.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

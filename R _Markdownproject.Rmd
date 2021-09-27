@@ -209,7 +209,7 @@ View(weightinfo)
 
 ##Now tables are cleaned, merged the tables
 ```{r}
-merged_final <- merge(merge(dailyactivity2, sleep, by = c('Id', 'Date')), weightinfo, by = c('Id', 'Date'))
+merged_final <- merge(merge(dailyactivity2, sleep, by = c('Id', 'Date'),all=TRUE), weightinfo, by = c('Id', 'Date'),all=TRUE)
 ```
 
 ```{r}
